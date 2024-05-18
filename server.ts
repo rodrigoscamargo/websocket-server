@@ -1,6 +1,6 @@
 import WebSocket, { WebSocketServer } from "ws";
 
-const port = 1234;
+const port = 1235;
 const wss = new WebSocketServer({ port });
 const maxClients = 2;
 let rooms: Map<string, Array<Player>> = new Map<string, Array<Player>>();
@@ -104,8 +104,8 @@ wss.on('connection', (ws) => {
             return;
         }
 
-        const whoChoosesThePiece: number = Math.floor((Math.random()));
-
+        const whoChoosesThePiece: number = 0; //drawNumber(0,1);
+        console.info(`Winnder index:  ${whoChoosesThePiece}`);
         activeRoom.push(player!);
 
         if (whoChoosesThePiece == 0) {
@@ -113,7 +113,7 @@ wss.on('connection', (ws) => {
             const ready: Message = { type: 'ready', params: { player: activeRoom[0] } }
             const readyToChoose: Message = { type: 'readyToChoose', params: { player: activeRoom[1] } }
 
-            activeRoom[0].websocket?.send(JSON.stringify(readyToChoose, replacer));
+            activeRoom[0].websocket!.send(JSON.stringify(readyToChoose, replacer));
             activeRoom[1].websocket?.send(JSON.stringify(ready, replacer));
         } else {
 
@@ -147,8 +147,10 @@ wss.on('connection', (ws) => {
 
         const playerIndex = activeRoom.findIndex(player => player.id == params.player?.id);
         activeRoom[playerIndex].piece = params.player?.piece;
+        activeRoom[playerIndex == 0? 1: 0].piece = params.player?.piece == 'X'? 'O': 'X';
 
-        //Informar os sobre a peca do oponente
+        activeRoom[0].websocket!.send(JSON.stringify({type: 'start', params: {player: activeRoom[1]}}, replacer));
+        activeRoom[1].websocket!.send(JSON.stringify({type: 'start', params: {player: activeRoom[0]}}, replacer));
     }
 
     function game(params: Params) {
@@ -165,6 +167,10 @@ wss.on('connection', (ws) => {
         }
     }
 })
+
+function drawNumber(min: number, max: number): number {
+    return Math.floor(Math.random() * (max - min + 1)) + min;
+  }
 
 
 function generalInformation(ws: WebSocket, params: Params) {
