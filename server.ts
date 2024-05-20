@@ -13,7 +13,7 @@ interface Message {
 interface Params {
     room?: string,
     player?: Player,
-    tictactoe?: TicTacToe;
+    play?: Play;
 }
 
 interface Player {
@@ -23,20 +23,20 @@ interface Player {
     websocket?: WebSocket,
 }
 
-interface TicTacToe {
+interface Play {
     position: number
 }
 
 enum PieceType {
     X = 'X',
     O = 'O'
-  }
+}
 
 function replacer(key: string, value: any) {
     if (key === 'websocket') {
         return undefined;
     }
-    if (key === 'tictactoe') {
+    if (key === 'play') {
         return undefined;
     }
     return value;
@@ -58,7 +58,6 @@ wss.on('connection', (ws) => {
             case "leave":
                 leave(message.params!);
                 break;
-
             case "choose":
                 choose(message.params!);
                 break;
@@ -104,7 +103,7 @@ wss.on('connection', (ws) => {
             return;
         }
 
-        const whoChoosesThePiece: number = 0; //drawNumber(0,1);
+        const whoChoosesThePiece: number = drawNumber(0,1);
         console.info(`Winnder index:  ${whoChoosesThePiece}`);
         activeRoom.push(player!);
 
@@ -147,10 +146,10 @@ wss.on('connection', (ws) => {
 
         const playerIndex = activeRoom.findIndex(player => player.id == params.player?.id);
         activeRoom[playerIndex].piece = params.player?.piece;
-        activeRoom[playerIndex == 0? 1: 0].piece = params.player?.piece == 'X'? 'O': 'X';
+        activeRoom[playerIndex == 0 ? 1 : 0].piece = params.player?.piece == 'X' ? 'O' : 'X';
 
-        activeRoom[0].websocket!.send(JSON.stringify({type: 'start', params: {player: activeRoom[1]}}, replacer));
-        activeRoom[1].websocket!.send(JSON.stringify({type: 'start', params: {player: activeRoom[0]}}, replacer));
+        activeRoom[0].websocket!.send(JSON.stringify({ type: 'start', params: { player: activeRoom[1] } }, replacer));
+        activeRoom[1].websocket!.send(JSON.stringify({ type: 'start', params: { player: activeRoom[0] } }, replacer));
     }
 
     function game(params: Params) {
@@ -159,18 +158,17 @@ wss.on('connection', (ws) => {
 
         const nextPlayerIndex = room!.findIndex((player) => player.id !== currentPlayer.id);
 
-        const currentPlay: Message = { type: 'game', params: { tictactoe: params.tictactoe!, }, };
+        const currentPlay: Message = { type: 'game', params: { play: params.play!, }, };
+        console.log(`nextPlayer: ${room![nextPlayerIndex].name}`)
 
-        if (nextPlayerIndex) {
-            room![nextPlayerIndex].websocket!.send(JSON.stringify(currentPlay));
-            return;
-        }
+        room![nextPlayerIndex].websocket!.send(JSON.stringify(currentPlay));
+
     }
 })
 
 function drawNumber(min: number, max: number): number {
     return Math.floor(Math.random() * (max - min + 1)) + min;
-  }
+}
 
 
 function generalInformation(ws: WebSocket, params: Params) {
