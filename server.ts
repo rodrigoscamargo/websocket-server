@@ -64,11 +64,30 @@ wss.on('connection', (ws) => {
             case "game":
                 game(message.params!);
                 break;
+            case "restart":
+                restart(message.params!);
+                break;
+            case "gameover":
+                gameover(message.params!);
+                break;
             default:
                 console.warn(`Type: ${message.type} unknown`);
                 break;
         }
     })
+
+    function restart(params: Params) {
+        let room = rooms.get(params.room!);
+        const message: Message = { type: 'restart' };
+        room!.forEach(player => player.websocket!.send(JSON.stringify(message, replacer)));
+    }
+
+
+    function gameover(params: Params) {
+        let room = rooms.get(params.room!);
+        const message: Message = { type: 'gameover' };
+        room!.forEach(player => player.websocket!.send(JSON.stringify(message, replacer)));
+    }
 
     function create(params: Params) {
         const room = genKey(5);
@@ -103,7 +122,7 @@ wss.on('connection', (ws) => {
             return;
         }
 
-        const whoChoosesThePiece: number = drawNumber(0,1);
+        const whoChoosesThePiece: number = drawNumber(0, 1);
         console.info(`Winnder index:  ${whoChoosesThePiece}`);
         activeRoom.push(player!);
 
